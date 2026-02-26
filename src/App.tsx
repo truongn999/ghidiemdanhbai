@@ -244,6 +244,25 @@ export default function App() {
     setActiveTab('scoreboard');
   };
 
+  const handleAddPlayerToMatch = (playerName: string) => {
+    if (!currentMatch) return;
+
+    const newPlayer: Player = {
+      id: `p_${Date.now()}`,
+      name: playerName,
+      avatar: `https://picsum.photos/seed/${playerName}/200`,
+      totalWins: 0,
+      currentScore: 0,
+      rank: players.length + 1,
+    };
+
+    setPlayers(prev => [...prev, newPlayer]);
+    setCurrentMatch(prev => prev ? {
+      ...prev,
+      players: [...prev.players, newPlayer.id],
+    } : prev);
+  };
+
   const handleDeletePlayer = (playerId: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa người chơi này?')) {
       setPlayers(prev => prev.filter(p => p.id !== playerId));
@@ -293,6 +312,7 @@ export default function App() {
                 onEditRound={handleEditRound}
                 onDeleteRound={handleDeleteRound}
                 onEndMatch={handleEndMatch}
+                onAddPlayerToMatch={handleAddPlayerToMatch}
               />
             )}
             {activeTab === 'players' && (

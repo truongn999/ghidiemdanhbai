@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Clock, Trophy, Plus, Edit2, CheckCircle, Trash2, Crown } from 'lucide-react';
+import { Clock, Trophy, Plus, Edit2, CheckCircle, Trash2, Crown, UserPlus, X, Check } from 'lucide-react';
 import { Player, Match } from '../types';
 
 interface ScoreboardProps {
@@ -11,9 +11,10 @@ interface ScoreboardProps {
   onEditRound: (roundId: string) => void;
   onDeleteRound: (roundId: string) => void;
   onEndMatch: () => void;
+  onAddPlayerToMatch: (playerName: string) => void;
 }
 
-export default function Scoreboard({ match, players, onCreateMatch, onEditRound, onDeleteRound, onEndMatch }: ScoreboardProps) {
+export default function Scoreboard({ match, players, onCreateMatch, onEditRound, onDeleteRound, onEndMatch, onAddPlayerToMatch }: ScoreboardProps) {
   if (!match) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -46,6 +47,23 @@ export default function Scoreboard({ match, players, onCreateMatch, onEditRound,
 
   const matchPlayers = match.players.map(id => players.find(p => p.id === id)).filter(Boolean) as typeof players;
   const [showSummary, setShowSummary] = useState(false);
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const addPlayerInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showAddPlayer && addPlayerInputRef.current) {
+      addPlayerInputRef.current.focus();
+    }
+  }, [showAddPlayer]);
+
+  const handleAddPlayer = () => {
+    const trimmed = newPlayerName.trim();
+    if (!trimmed) return;
+    onAddPlayerToMatch(trimmed);
+    setNewPlayerName('');
+    setShowAddPlayer(false);
+  };
 
   // Compute totals for summary
   const playerTotals = matchPlayers.map(p => ({
@@ -113,7 +131,59 @@ export default function Scoreboard({ match, players, onCreateMatch, onEditRound,
               );
             });
           })()}
+
+          {/* Add Player Button */}
+          <button
+            onClick={() => setShowAddPlayer(true)}
+            className="shrink-0 p-2 flex flex-col items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+          >
+            <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-400 dark:border-slate-600 flex items-center justify-center">
+              <UserPlus size={16} className="text-slate-400 dark:text-slate-500" />
+            </div>
+            
+          </button>
         </div>
+
+        {/* Add Player Inline Form */}
+        <AnimatePresence>
+          {showAddPlayer && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="px-4 pb-3 flex items-center gap-2">
+                <input
+                  ref={addPlayerInputRef}
+                  type="text"
+                  value={newPlayerName}
+                  onChange={(e) => setNewPlayerName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddPlayer();
+                    if (e.key === 'Escape') { setShowAddPlayer(false); setNewPlayerName(''); }
+                  }}
+                  placeholder="Tên người chơi mới..."
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                />
+                <button
+                  onClick={handleAddPlayer}
+                  disabled={!newPlayerName.trim()}
+                  className="size-10 flex items-center justify-center rounded-xl bg-primary text-white disabled:opacity-40 hover:bg-primary/90 transition-all shadow-sm"
+                >
+                  <Check size={18} />
+                </button>
+                <button
+                  onClick={() => { setShowAddPlayer(false); setNewPlayerName(''); }}
+                  className="size-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* History List */}
